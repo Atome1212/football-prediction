@@ -4,7 +4,12 @@ import pandas as pd
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float
 from sqlalchemy.exc import SQLAlchemyError
 
+
+
+
+
 def create_table_dataset(engine, table_name, metadata, list_of_columns, primary_keys=None):
+    """Create a table in the database if it does not exist"""
     columns = [
         Column(element[0], element[1], primary_key=(element[0] in primary_keys)) 
         for element in list_of_columns
@@ -18,11 +23,20 @@ def create_table_dataset(engine, table_name, metadata, list_of_columns, primary_
 
     return dataset
 
+
+
+
 def create_table_if_not_exists(engine, metadata, all_tables):
+    """Create the tables if they do not exist"""
     for table_name, list_of_columns in all_tables.items():
         create_table_dataset(engine, table_name, metadata, list_of_columns)         
         
+        
+        
+        
+        
 def initialization_table(engine):
+    """Create the tables if they do not exist"""
     metadata = MetaData()
     all_tables = {
         'teams': [
@@ -74,7 +88,16 @@ def initialization_table(engine):
             ('Match Id', Integer), 
             ('Csv File Name', String(255)),
             ('Csv Line Number', Integer)
-        ]
+        ],
+        
+        # 'future_matches': [
+        #     ('Team Id', Integer), 
+        #     ('Home Team Id', Integer), 
+        #     ('Result', String(255)),
+        #     ('Away Team Id', Integer),
+        #     ('Date', String(255)),
+            
+        #     ]
     }
     
     primary_keys = {
@@ -91,7 +114,13 @@ def initialization_table(engine):
         create_table_dataset(engine, table_name, metadata, list_of_columns, primary_keys.get(table_name, []))
     metadata.create_all(engine)
 
+
+
+
+
 def keep_only_last_6_csv_files(csv_directory):
+    """update the database with the last 6 csv files"""
+    
     csv_files = [f for f in os.listdir(csv_directory) if f.endswith('.csv')]
     csv_files.sort(reverse=True)  
     current_year = datetime.now().year % 100
@@ -104,6 +133,9 @@ def keep_only_last_6_csv_files(csv_directory):
             return sorted(files_to_keep[:6])
     return sorted(files_to_keep)
 
+
+
+
 def get_existing_teams(engine):
     query = "SELECT `Team Name` FROM teams"
     try:
@@ -113,21 +145,35 @@ def get_existing_teams(engine):
         print(f"An error occurred: {e}")
         return []
 
+
+
+
+
 def insert_teams(engine, teams_df):
+    """Insert new teams into the database"""
+    
     query = "SELECT MAX(`Team Id`) as max_id FROM teams"
     result = pd.read_sql(query, con=engine)
     current_max_id = result['max_id'].iloc[0] if not result.empty and result['max_id'].iloc[0] is not None else 0
     teams_df['Team Id'] = range(current_max_id + 1, current_max_id + 1 + len(teams_df))
     teams_df.to_sql('teams', con=engine, if_exists='append', index=False)
 
+
+
+
+
 def process_each_csv(engine, csv_directory):
+    """Process each csv file"""
+    
     existing_teams = get_existing_teams(engine)
     csv_files = keep_only_last_6_csv_files(csv_directory)
     for csv_file in csv_files:
         full_path = os.path.join(csv_directory, csv_file)
+        # df1= pd.read_csv("future_matches.csv")
         if os.path.exists(full_path):
             print(f"Processing {csv_file}...")
             df = pd.read_csv(full_path)
+            
             df.dropna(how='all', inplace=True)
             combined_teams = pd.concat([df['HomeTeam'], df['AwayTeam']]).unique()
             new_teams = [team for team in combined_teams if team not in existing_teams]
@@ -152,6 +198,10 @@ def process_each_csv(engine, csv_directory):
         else:
             print(f"{full_path} does not exist.")
 
+
+
+
+
 def process_matches(engine, df):
     query = "SELECT MAX(`Match Id`) as max_id FROM matches"
     result = pd.read_sql(query, con=engine)
@@ -173,10 +223,16 @@ def process_matches(engine, df):
         match_df = pd.DataFrame([match_data])
         match_df.to_sql('matches', con=engine, if_exists='append', index=False)
 
+
+
+
 def get_team_id(engine, team_name):
     query = f"SELECT `Team Id` FROM teams WHERE `Team Name` = '{team_name}'"
     result = pd.read_sql(query, con=engine)
     return result['Team Id'].iloc[0] if not result.empty else None
+
+
+
 
 def get_match_id(engine, home_team, away_team, date):
     query = f"""
@@ -187,6 +243,8 @@ def get_match_id(engine, home_team, away_team, date):
     """
     result = pd.read_sql(query, con=engine)
     return result['Match Id'].iloc[0] if not result.empty else None
+
+
 
 def process_full_time_results(engine, df):
     for index, row in df.iterrows():
@@ -200,6 +258,9 @@ def process_full_time_results(engine, df):
         full_time_df = pd.DataFrame([full_time_data])
         full_time_df.to_sql('full_time_results', con=engine, if_exists='append', index=False)
 
+
+
+
 def process_half_time_results(engine, df):
     for index, row in df.iterrows():
         match_id = get_match_id(engine, row['HomeTeam'], row['AwayTeam'], row['Date'])
@@ -212,6 +273,9 @@ def process_half_time_results(engine, df):
         }
         half_time_df = pd.DataFrame([half_time_data])
         half_time_df.to_sql('half_time_results', con=engine, if_exists='append', index=False)
+
+
+
 
 def process_match_statistics(engine, df):
     for index, row in df.iterrows():
@@ -232,6 +296,10 @@ def process_match_statistics(engine, df):
         statistics_df = pd.DataFrame([statistics_data])
         statistics_df.to_sql('match_statistics', con=engine, if_exists='append', index=False)
 
+
+
+
+
 def process_match_odds(engine, df):
     for index, row in df.iterrows():
         match_id = get_match_id(engine, row['HomeTeam'], row['AwayTeam'], row['Date'])
@@ -248,6 +316,28 @@ def process_match_odds(engine, df):
         odds_df = pd.DataFrame([odds_data])
         odds_df.to_sql('match_odds', con=engine, if_exists='append', index=False)   
 
+
+
+# def future_matches(engine, df1):
+#     for index, row in df1.iterrows():
+#         home_team_id = get_team_id(engine, row['Home Team'])
+#         away_team_id = get_team_id(engine, row['Away Team'])
+        
+        
+        
+#         future_matches_data = {
+#             'Home Team Id': home_team_id,
+#             'Result': row['Result'],
+#             'Away Team Id': away_team_id,
+#             'Date': row['Date']
+#         }
+        
+#         future_matches_df = pd.DataFrame([future_matches_data])
+#         future_matches_df.to_sql('future_matches', con=engine, if_exists='append', index=False)
+
+
+
+
 def process_csv_updates(engine, df, csv_file):
     csv_updates_data = {
         'Match Id': 0,
@@ -257,7 +347,15 @@ def process_csv_updates(engine, df, csv_file):
     csv_updates_df = pd.DataFrame(csv_updates_data)
     csv_updates_df.to_sql('csv_updates', con=engine, if_exists='append', index=False)
 
+
+
+
+
+
+
 def db_creation():
+    """Create the database"""
+    
     host = '/'
     port = 3306
     user = 'football-prediction'
@@ -268,6 +366,9 @@ def db_creation():
     engine = create_engine(db_engine_str)
     initialization_table(engine)
     process_each_csv(engine, csv_directory)
+
+
+
 
 
 if __name__ == "__main__":

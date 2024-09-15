@@ -15,7 +15,7 @@ def url_of_csv(url="https://www.football-data.co.uk/belgiumm.php", string_to_fou
     print(f"Erreur: {response.status_code}")
     return False
 
-def download_csv(url):
+def download_csv(url, first_time=False):
     """That function downloads the csv file from the url and saves it in the csv folder with an index column"""
 
     response = requests.get(url)
@@ -41,14 +41,15 @@ def download_csv(url):
                     new_rows = list(range(new_rows_start + 1, len(new_df) + 1)) 
                     modified_indices.extend(new_rows)
 
-                if modified_indices:
-                    os.remove(file_path)
-                    new_df.to_csv(file_path, index=False)
-                    print(f"{name} Updated. Modified rows: {modified_indices}")
-                    return name, modified_indices
-                else:
-                    print(f"{name} already exists and is up-to-date")
-                    return name, []
+                if not first_time:
+                    if modified_indices:
+                        os.remove(file_path)
+                        new_df.to_csv(file_path, index=False)
+                        print(f"{name} Updated. Modified rows: {modified_indices}")
+                        return name, modified_indices
+                    else:
+                        print(f"{name} already exists and is up-to-date")
+                        return name, []
 
             else:
                 new_df.to_csv(file_path, index=False)
@@ -63,7 +64,7 @@ def download_csv(url):
         print(f"Erreur: {response.status_code}")
     return False
 
-def scraper():
+def scraper(first_time = False):
     """This function calls the url_of_csv and download_csv functions to scrape the csv files"""
     
     urls = url_of_csv()
@@ -72,8 +73,8 @@ def scraper():
         list_modified = {}
 
         for url in urls:
-            returned_modified = download_csv(url)
-            if returned_modified:
+            returned_modified = download_csv(url, first_time)
+            if returned_modified and not first_time:    
                 if len(returned_modified[1]) > 0:
                     list_modified[returned_modified[0]] = returned_modified[1]
                     
@@ -105,7 +106,7 @@ def check_same_columns():
     return columns
 
 def main():
-    scraper()
+    scraper(True)
     print(len(check_same_columns()))    
 
 if __name__ == '__main__':

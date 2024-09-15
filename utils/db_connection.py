@@ -5,9 +5,9 @@ def connect_to_db():
     return pymysql.connect(
         host = '',
         port = 3306,
-        user = 'football-prediction',
-        password = '1hjM!kuOX[rOmM_k',
-        database = 'football-prediction'
+        user = '',
+        password = '',
+        database = ''
     )
 
 def close_connection(connection):

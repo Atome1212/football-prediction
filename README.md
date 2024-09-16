@@ -147,7 +147,7 @@ The project is structured into different modules for scraping data, processing a
 
 ## 🎓 Team Members
 
-- **👷‍♂️ **[Atome1212](https://github.com/Atome1212)**: Data Engineer
-- **👷‍♂️ **[ezgitandogan](https://github.com/ezgitandogan)**: Data Engineer
-- **👨‍💻 **[Siegfried2021](https://github.com/Siegfried2021)**: Data Analyst
-- **👩‍💻 **[GeorginaAG](https://github.com/GeorginaAG)**: Data Analyst
+- **👷‍♂️ [Atome1212](https://github.com/Atome1212)**: Data Engineer
+- **👷‍♂️ [ezgitandogan](https://github.com/ezgitandogan)**: Data Engineer
+- **👨‍💻 [Siegfried2021](https://github.com/Siegfried2021)**: Data Analyst
+- **👩‍💻 [GeorginaAG](https://github.com/GeorginaAG)**: Data Analyst

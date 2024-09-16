@@ -62,6 +62,38 @@ The project is structured into different modules for scraping data, processing a
   ```bash
     python db_creation.py
   ```
+4. Install & Setup Airflow
+   1. Install Airflow using pip:
+      ```bash
+        pip install apache-airflow=
+      ```
+
+   2. Initialize the Airflow database:
+      ```bash
+        airflow db init
+      ```
+
+   3. Create an Airflow user:
+      ```bash
+        airflow users create \
+        --username admin \
+        --firstname FIRST_NAME \
+        --lastname LAST_NAME \
+        --role Admin \
+        --email admin@example.com
+      ```
+      
+   4. Start the Airflow web server and scheduler:
+      ```bash
+        airflow webserver --port 8080
+      ```
+      and i an other terminal
+      ```bash
+        airflow scheduler
+      ```
+
+
+
 
 ## 🏃‍♂️ How to Run
 

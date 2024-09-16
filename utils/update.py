@@ -61,18 +61,24 @@ def update_half_time_results(cursor, df, match_id):
     cursor.execute(update_half_time_results_sql, (df['HTHG'], df['HTAG'], df['HTR'], match_id))
 
 def update_match_odds(cursor, df, match_id):
-    """Update the match_odds table"""
+    """Update the match_odds table with new columns"""
     update_match_odds_sql = """
         UPDATE match_odds
-            SET B365H = %s,
+            SET AvgH = %s,
+                AvgA = %s,
+                AHCh = %s,
+                B365H = %s,
                 B365D = %s,
                 B365A = %s,
-                WHH = %s,
-                WHD = %s,
-                WHA = %s
+                BWH = %s,
+                BWD = %s,
+                BWA = %s,
+                PSH = %s,
+                PSD = %s,
+                PSA = %s
             WHERE `Match Id` = %s;
     """
-    cursor.execute(update_match_odds_sql, (df['B365H'], df['B365D'], df['B365A'], df['WHH'], df['WHD'], df['WHA'], match_id))
+    cursor.execute(update_match_odds_sql, (df['AvgH'], df['AvgA'], df['AHCh'],df['B365H'], df['B365D'], df['B365A'],df['BWH'], df['BWD'], df['BWA'],df['PSH'], df['PSD'], df['PSA'], match_id))
 
 def update_match_statistics(cursor, df, match_id):
     """Update the match_statistics table"""

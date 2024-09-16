@@ -26,7 +26,7 @@ The project is structured into different modules for scraping data, processing a
 
 1. Clone the repository:
     ```bash
-    git clone https://github.com/yourusername/football-prediction.git
+    git clone https://github.com/Atome1212/football-prediction.git
     cd football-prediction
     ```
 

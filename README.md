@@ -39,7 +39,7 @@ The project is structured into different modules for scraping data, processing a
    ```sql
     CREATE DATABASE football_prediction;
    ```
-
+   Fill in the following fields in the db_creation.py script:
    ```bash
     host = 'localhost'   # MySQL server address (e.g., localhost)
     port = 3306          # MySQL port (usually 3306)

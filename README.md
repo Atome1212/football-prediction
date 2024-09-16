@@ -2,7 +2,7 @@
 # ⚽ Football Prediction
 <p align="center">
   <a href="https://www.football-data.co.uk">
-      <img src="https://via.placeholder.com/500" alt="Football Prediction Logo" width="500" />
+      <img src="./img/rdm.png" alt="Football Prediction Logo" width="500" />
   </a>
 </p>
 

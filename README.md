@@ -35,7 +35,7 @@ The project is structured into different modules for scraping data, processing a
     pip install -r requirements.txt
     ```
 
-3. [Setup **MySQL** for the database](https://www.youtube.com/watch?v=u96rVINbAUI&ab_channel=WebDevSimplified):
+3. [Setup **MySQL** for the database:](https://www.youtube.com/watch?v=u96rVINbAUI&ab_channel=WebDevSimplified):
    ```sql
     CREATE DATABASE football_prediction;
    ```
@@ -62,7 +62,7 @@ The project is structured into different modules for scraping data, processing a
   ```bash
     python db_creation.py
   ```
-4. [Install & Setup Airflow](https://airflow.apache.org/docs/apache-airflow/stable/installation/index.html)
+4. [Install & Setup Airflow:](https://airflow.apache.org/docs/apache-airflow/stable/installation/index.html)
    1. Install Airflow using pip:
       ```bash
         pip install apache-airflow=

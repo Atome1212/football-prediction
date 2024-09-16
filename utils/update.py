@@ -1,16 +1,5 @@
 import pandas as pd
-import pymysql
-
-
-def connect_to_db():
-    """Establish a connection to the database"""
-    return pymysql.connect(
-        host='',
-        port=3306,
-        user='football-prediction',
-        password='1hjM!kuOX[rOmM_k',
-        database='football-prediction'
-    )
+from utils.db_connection import connect_to_db, close_connection
 
 def fetch_match_id(cursor, csv_file, line):
     """Fetch the Match Id for the given CSV file and line"""
@@ -136,7 +125,7 @@ def update(**kwargs):
         except Exception as e:
             print(f"Error fetching Match Ids: {e}")
         finally:
-            connection.close()
+            close_connection(connection)
     else:
         print("No csv file to fetch from the database")
 

@@ -34,8 +34,19 @@ The project is structured into different modules for scraping data, processing a
     ```bash
     pip install -r requirements.txt
     ```
+3. Create csv and models folder:
+    ```bash
+    mkdir csv
+    mkdir models
+    ```
 
-3. [Setup **MySQL** for the database:](https://www.youtube.com/watch?v=u96rVINbAUI&ab_channel=WebDevSimplified):
+4. Start the scrapper for getting csv:
+   ```bash
+    cd football-prediction/utils/
+    python scrap.py
+   ```
+
+5. [Setup **MySQL** for the database:](https://www.youtube.com/watch?v=u96rVINbAUI&ab_channel=WebDevSimplified):
    ```sql
     CREATE DATABASE football_prediction;
    ```
@@ -62,18 +73,18 @@ The project is structured into different modules for scraping data, processing a
   ```bash
     python db_creation.py
   ```
-4. [Install & Setup Airflow:](https://airflow.apache.org/docs/apache-airflow/stable/installation/index.html)
-   1. Install Airflow using pip:
+6. [Install & Setup Airflow:](https://airflow.apache.org/docs/apache-airflow/stable/installation/index.html)
+   Install Airflow using pip:
       ```bash
         pip install apache-airflow=
       ```
 
-   2. Initialize the Airflow database:
+  Initialize the Airflow database:
       ```bash
         airflow db init
       ```
 
-   3. Create an Airflow user:
+  Create an Airflow user:
       ```bash
         airflow users create \
         --username admin \
@@ -82,38 +93,39 @@ The project is structured into different modules for scraping data, processing a
         --role Admin \
         --email admin@example.com
       ```
-      
-   4. Start the Airflow web server:
+  
+
+## 🏃‍♂️ How to Run (Manual)
+1. Start the scrapper for getting new csv:
+   ```bash
+    cd football-prediction/utils/
+    python scrap.py
+   ```
+2. Update the Data base:
+   ```bash
+    cd football-prediction/utils/
+    python update.py
+   ```
+
+3. Use the **Random Forest Classifier** model for predictions:
+   ```bash
+    cd football-prediction/utils/
+    python modelling_soccer.py
+   ```
+
+## 🏃‍♂️ How to Run (Airflow)
+1. Run **Airflow** DAG to start data scraping and updating and training:
+    Start the Airflow web server:
       ```bash
         airflow webserver --port 8080
       ```
       
-   5. Start the Airflow scheduler:
+    Start the Airflow scheduler:
       ```bash
         airflow scheduler
       ```
+2. Access the Airflow UI at **http://localhost:8080** and trigger your DAG.
 
-## 🏃‍♂️ How to Run
-
-1. Run **Airflow** DAG to start data scraping and updating:
-    ```bash
-    airflow dags trigger football_scraper_dag
-    ```
-
-2. Use the **Random Forest Classifier** model for predictions:
-    ```bash
-    python modelling_soccer.py
-    ```
-
-3. For manual data scraping:
-    ```bash
-    python scrap.py
-    ```
-
-4. To update the database:
-    ```bash
-    python update.py
-    ```
 
 ## 🗂️ Directory Structure
 

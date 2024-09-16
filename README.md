@@ -70,10 +70,10 @@ The project is structured into different modules for scraping data, processing a
             match_odds: Stores betting odds for each match <br>
             csv_updates: Stores updated CSV lines <br>
 
-  Run the script to create these tables:
-  ```bash
-    python db_creation.py
-  ```
+   Run the script to create these tables:
+   ```bash
+     python db_creation.py
+   ```
 6. [Install & Setup Airflow:](https://airflow.apache.org/docs/apache-airflow/stable/installation/index.html)
    Install Airflow using pip:
       ```bash

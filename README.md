@@ -80,12 +80,12 @@ The project is structured into different modules for scraping data, processing a
         pip install apache-airflow=
       ```
 
-  Initialize the Airflow database:
+   Initialize the Airflow database:
       ```bash
         airflow db init
       ```
 
-  Create an Airflow user:
+   Create an Airflow user:
       ```bash
         airflow users create \
         --username admin \

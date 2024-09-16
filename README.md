@@ -49,14 +49,14 @@ The project is structured into different modules for scraping data, processing a
    ```
 
    The necessary tables to store match data, statistics, and updates are defined in the script.
-       The following tables will be created:
-          - teams: Stores team information 
-          - matches: Stores match details
-          - full_time_results: Stores full-time results of the match
-          - half_time_results: Stores half-time results of the match
-          - match_statistics: Stores match statistics (cards, corners, etc.)
-          - match_odds: Stores betting odds for each match
-          - csv_updates: Stores updated CSV lines
+       The following tables will be created: <br>
+          teams: Stores team information <br>
+          matches: Stores match details <br>
+          full_time_results: Stores full-time results of the match <br>
+          half_time_results: Stores half-time results of the match <br>
+          match_statistics: Stores match statistics (cards, corners, etc.) <br>
+          match_odds: Stores betting odds for each match <br>
+          csv_updates: Stores updated CSV lines <br>
 
 ## 🏃‍♂️ How to Run
 

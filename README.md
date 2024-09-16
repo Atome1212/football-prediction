@@ -77,7 +77,7 @@ The project is structured into different modules for scraping data, processing a
 6. [Install & Setup Airflow:](https://airflow.apache.org/docs/apache-airflow/stable/installation/index.html)
    Install Airflow using pip:
       ```bash
-        pip install apache-airflow=
+        pip install apache-airflow
       ```
 
    Initialize the Airflow database:

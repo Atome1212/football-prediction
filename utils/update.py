@@ -1,16 +1,5 @@
 import pandas as pd
-import pymysql
-
-
-def connect_to_db():
-    """Establish a connection to the database"""
-    return pymysql.connect(
-        host='',
-        port=3306,
-        user='football-prediction',
-        password='1hjM!kuOX[rOmM_k',
-        database='football-prediction'
-    )
+from utils.db_connection import connect_to_db, close_connection
 
 def fetch_match_id(cursor, csv_file, line):
     """Fetch the Match Id for the given CSV file and line"""
@@ -72,18 +61,24 @@ def update_half_time_results(cursor, df, match_id):
     cursor.execute(update_half_time_results_sql, (df['HTHG'], df['HTAG'], df['HTR'], match_id))
 
 def update_match_odds(cursor, df, match_id):
-    """Update the match_odds table"""
+    """Update the match_odds table with new columns"""
     update_match_odds_sql = """
         UPDATE match_odds
-            SET B365H = %s,
+            SET AvgH = %s,
+                AvgA = %s,
+                AHCh = %s,
+                B365H = %s,
                 B365D = %s,
                 B365A = %s,
-                WHH = %s,
-                WHD = %s,
-                WHA = %s
+                BWH = %s,
+                BWD = %s,
+                BWA = %s,
+                PSH = %s,
+                PSD = %s,
+                PSA = %s
             WHERE `Match Id` = %s;
     """
-    cursor.execute(update_match_odds_sql, (df['B365H'], df['B365D'], df['B365A'], df['WHH'], df['WHD'], df['WHA'], match_id))
+    cursor.execute(update_match_odds_sql, (df['AvgH'], df['AvgA'], df['AHCh'],df['B365H'], df['B365D'], df['B365A'],df['BWH'], df['BWD'], df['BWA'],df['PSH'], df['PSD'], df['PSA'], match_id))
 
 def update_match_statistics(cursor, df, match_id):
     """Update the match_statistics table"""
@@ -136,7 +131,7 @@ def update(**kwargs):
         except Exception as e:
             print(f"Error fetching Match Ids: {e}")
         finally:
-            connection.close()
+            close_connection(connection)
     else:
         print("No csv file to fetch from the database")
 

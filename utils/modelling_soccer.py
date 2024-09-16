@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import os
 from sklearn.impute import KNNImputer
 import random
 import joblib
@@ -7,6 +8,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from joblib import Parallel, delayed
+from datetime import datetime
+from utils.db_connection import connect_to_db, close_connection
 
 # Step1.1: Create a clean-and-preprocess object returning the uptaded df cleaned and including the engineered features
 
@@ -29,29 +32,29 @@ class FootballDataPreprocessor:
     def create_season(self):
         """
         Creates a 'season' column based on match dates.
-        The function assigns a season label (e.g., '20192020') to each match based on the date.
         """
-        date_formats = ['%Y-%m-%d', '%d/%m/%Y']
-        for date_format in date_formats:
-            self.df['Date'] = pd.to_datetime(self.df['Date'], format=date_format, errors='coerce')
-            bins = [
-                pd.Timestamp('2019-07-01'),
-                pd.Timestamp('2020-07-01'),
-                pd.Timestamp('2021-07-01'),
-                pd.Timestamp('2022-07-01'),
-                pd.Timestamp('2023-07-01'),
-                pd.Timestamp('2024-07-01'),
-                pd.Timestamp('2025-07-01')
-            ]
-            season_labels = [
-                '20192020',
-                '20202021',
-                '20212022',
-                '20222023',
-                '20232024',
-                '20242025'
-            ]
-            self.df['season'] = pd.cut(self.df['Date'], bins=bins, labels=season_labels)
+        if self.df["Date"].dtype != 'datetime64[ns]':
+            self.df['Date'] = pd.to_datetime(self.df['Date'], errors='coerce')
+
+        bins = [
+            pd.Timestamp('2019-07-01'),
+            pd.Timestamp('2020-07-01'),
+            pd.Timestamp('2021-07-01'),
+            pd.Timestamp('2022-07-01'),
+            pd.Timestamp('2023-07-01'),
+            pd.Timestamp('2024-07-01'),
+            pd.Timestamp('2025-07-01')
+        ]
+        season_labels = [
+            '20192020',
+            '20202021',
+            '20212022',
+            '20222023',
+            '20232024',
+            '20242025'
+        ]
+        
+        self.df['season'] = pd.cut(self.df['Date'], bins=bins, labels=season_labels, right=False)
 
     def subset_df(self, cols_to_keep):
         """
@@ -64,9 +67,12 @@ class FootballDataPreprocessor:
 
     def rewrite_date(self):
         """
-        Rewrites the 'Date' column format from 'dd/mm/yyyy' to a standardized datetime format.
+        Rewrites the 'Date' column format from 'dd/mm/yyyy' or 'yyyy-mm-dd' to a standardized datetime format.
         """
-        self.df["Date"] = pd.to_datetime(self.df["Date"], format="%d/%m/%Y")
+        self.df["Date"] = pd.to_datetime(self.df["Date"], format="%d/%m/%Y", errors='coerce')
+
+        # Handle any remaining 'NaT' values by trying the second format
+        self.df["Date"] = self.df["Date"].fillna(pd.to_datetime(self.df["Date"], format="%Y-%m-%d", errors='coerce'))
 
     def clean_data(self):
         """
@@ -92,9 +98,11 @@ class FootballDataPreprocessor:
         Returns:
             list: A list of dataframes containing the last 'n' games.
         """
-        team_games = self.df[(self.df['HomeTeam'] == team)|(self.df['AwayTeam'] == team)]
+        team_games = self.df[(self.df['HomeTeam'] == team) | (self.df['AwayTeam'] == team)]
         team_games = team_games.sort_values(by="Date", ascending=False)
+
         return [team_games.head(n) for n in n_list]
+
 
     def window_rows_last_n_games_home(self, team, n_list):
         """
@@ -287,13 +295,8 @@ class FootballDataPreprocessor:
         return self.df
 
     def full_process(self):
-        """
-        Executes the full preprocessing pipeline: cleaning, subsetting, feature engineering, and labeling results.
-        
-        Returns:
-            DataFrame: The fully processed dataframe with additional features.
-        """
-        self.subset_clean_rewrite()
+        self.subset_clean_rewrite()  
+        print(self.df.head()) 
         self.add_features([6, 8, 10, 12, 14])
         self.label_column_result()
         return self.df
@@ -331,6 +334,7 @@ class FootballDataPreprocessor:
         self.df = pd.concat([new_row, self.df], ignore_index=True)        
         self.rewrite_date()
         self.df = self.df.sort_values(by="Date", ascending=False).reset_index(drop=True)
+        self.create_season()
         new_row_index = self.df[(self.df['Date'] == date) & (self.df['HomeTeam'] == home_team) & (self.df['AwayTeam'] == away_team)].index
 
         n_last_games_hometeam = self.window_rows_last_n_games(home_team, n_list)
@@ -372,7 +376,7 @@ class FootballDataPreprocessor:
     
 # Step1.2: Find the find combination of n games sequences to optimize model performance (working on the cleaned and preprocessed df)
 
-def run_model_experiments(updated_df, n_combinations=10000, target_col='FTR_num'):
+def run_model_experiments(updated_df, n_combinations=35000, target_col='FTR_num'):
     # Constant columns to include in every feature set
     constant_cols = ['season', 'h2h_record', 'home_away_ratio', 'AHCh', 'B365H', 'B365D', 'B365A',
                      'BWH', 'BWD', 'BWA', 'PSH', 'PSD', 'PSA']
@@ -460,7 +464,15 @@ def train_model_with_best_features(df, best_feature_set, constant_cols, target_c
     best_model.fit(X_train, y_train)
 
     # Save the model with the best feature set
-    joblib.dump(best_model, 'best_random_forest_model.joblib')
+    date_time_now = datetime.now().strftime('%Y%m%d%H%M%S')
+
+
+    os.makedirs(f'./models/{date_time_now}', exist_ok=True)
+
+    joblib.dump(best_model, f"./models/{date_time_now}/best_random_forest_model.joblib")
+    
+    # Save the total features (constant + best features)
+    joblib.dump(total_features, f"./models/{date_time_now}/best_feature_set.joblib")
 
     # Return accuracy on the test set for validation
     predictions = best_model.predict(X_test)
@@ -469,32 +481,76 @@ def train_model_with_best_features(df, best_feature_set, constant_cols, target_c
     return accuracy
 
 # Step1.4: Predicting the result of the next match
-def predict_match_result(new_df, model_path, best_feature_set, constant_cols):
-    # Loading the pre-trained model
+def predict_match_result(new_df, model_path, constant_cols):
+    # Load the pre-trained model
     loaded_model = joblib.load(model_path)
     
+    # Load the total feature set used during training
+    best_feature_set = joblib.load(model_path.replace('best_random_forest_model.joblib', 'best_feature_set.joblib'))
+
     # Selecting the first row of the appended df for prediction
     match_for_prediction = new_df.head(1)
     
-    # Selecting the features used in the model
-    total_features = constant_cols + best_feature_set
+    # Use the same features as during training
+    match_for_prediction_features = match_for_prediction[best_feature_set]
 
-    match_for_prediction_features = match_for_prediction[total_features]
-    
-    # Making the prediction and mapping to a readbale outcome
+    # Making the prediction and mapping to a readable outcome
     predicted_result = loaded_model.predict(match_for_prediction_features)
     result_map = {1: 'Home Win', 0: 'Draw', 2: 'Away Win'}
     
     return result_map[predicted_result[0]]
 
-# Step_all: Combined preprocessor and model selection
-def preprocessing_and_model_selection(df, date, home_team, away_team, model_path):
+def just_train_model(df):
     # Step1: Preprocess the football data
     preprocessor_df = FootballDataPreprocessor(df)
     updated_df = preprocessor_df.full_process()
 
     # Step : Find the best feature set for the model
-    best_feature_set = run_model_experiments(updated_df, n_combinations=10000, target_col='FTR_num')
+    best_feature_set = run_model_experiments(updated_df, n_combinations=35000, target_col='FTR_num')
+    
+    # List of constant features used in the model
+    constant_cols = ['season', 'h2h_record', 'home_away_ratio', 'AHCh', 'B365H', 'B365D', 'B365A',
+                     'BWH', 'BWD', 'BWA', 'PSH', 'PSD', 'PSA']
+    
+    # Step3: Train the RandomForest model with the best feature set
+    train_model_with_best_features(updated_df, best_feature_set, constant_cols, target_col='FTR_num')
+
+def just_predict_match_result(df, date, home_team, away_team):
+    # Step1: Preprocess the football data
+    preprocessor_df = FootballDataPreprocessor(df)
+    
+    # List of constant features used in the model
+    constant_cols = ['season', 'h2h_record', 'home_away_ratio', 'AHCh', 'B365H', 'B365D', 'B365A',
+                     'BWH', 'BWD', 'BWA', 'PSH', 'PSD', 'PSA']
+
+    # Step2: Add the new match row and compute the relevant features for both teams (home and away)
+    updated_df_2 = preprocessor_df.add_new_row(date, home_team, away_team, [6, 8, 10, 12, 14])
+
+    # Step3: Find the trained model file
+
+    folders = [f for f in os.listdir('./models') if os.path.isfile(os.path.join('./models', f, "best_random_forest_model.joblib"))]
+
+    if folders:
+        oldest_folder = "./models/" + max(folders, key=lambda f: extract_date_from_filename(f)) + "/best_random_forest_model.joblib"
+        print(f"Le fichier le plus ancien est : {oldest_folder}")
+    else:
+        print("Aucun fichier .joblib trouvé dans le dossier.")
+        return None  # If no model is found, exit the function
+    
+    # Step4: Predict the result of the new match
+    result_game = predict_match_result(updated_df_2, oldest_folder, constant_cols)
+
+    return result_game
+
+
+# Step_all: Combined preprocessor and model selection
+def preprocessing_and_model_selection(df, date, home_team, away_team):
+    # Step1: Preprocess the football data
+    preprocessor_df = FootballDataPreprocessor(df)
+    updated_df = preprocessor_df.full_process()
+
+    # Step : Find the best feature set for the model
+    best_feature_set = run_model_experiments(updated_df, n_combinations=35000, target_col='FTR_num')
     
     # List of constant features used in the model
     constant_cols = ['season', 'h2h_record', 'home_away_ratio', 'AHCh', 'B365H', 'B365D', 'B365A',
@@ -507,18 +563,89 @@ def preprocessing_and_model_selection(df, date, home_team, away_team, model_path
     updated_df_2 = preprocessor_df.add_new_row(date, home_team, away_team, [6, 8, 10, 12, 14])
 
     # Step5: Predict the result of the new match
-    result_game = predict_match_result(updated_df_2, model_path, best_feature_set, constant_cols)
+
+    folders = [f for f in os.listdir('./models') if os.path.isfile(os.path.join('./models', f, "best_random_forest_model.joblib"))]
+    print(folders)
+
+    if folders:
+        oldest_folder = "./models/" + max(folders, key=lambda f: extract_date_from_filename(f) + "/best_random_forest_model.joblib")
+        print(f"Le fichier le plus ancien est : {oldest_folder}")
+    else:
+        print("Aucun fichier .joblib trouvé dans le dossier.")
+        return None  # If no model is found, exit the function
+    
+    # Step4: Predict the result of the new match
+    result_game = predict_match_result(updated_df_2, oldest_folder, constant_cols)
 
     return result_game
 
+def extract_date_from_filename(folder_name):
+    return datetime.strptime(folder_name, '%Y%m%d%H%M%S')
+
+
+def get_df_from_db():
+    connection = connect_to_db()
+    cursor = connection.cursor()    
+    cursor.execute("""
+        SELECT 
+            matches.`Match Id`,
+            homeTeam.`Team Name` AS HomeTeam,
+            awayTeam.`Team Name` AS AwayTeam,
+            DATE_FORMAT(STR_TO_DATE(matches.`Date`, '%d/%m/%Y'), '%Y-%m-%d') AS Date,
+            full_time_results.`FTHG`,
+            full_time_results.`FTAG`,
+            full_time_results.`FTR`,
+            half_time_results.`HTHG`,
+            half_time_results.`HTAG`,
+            half_time_results.`HTR`,
+            match_statistics.`HS`,
+            match_statistics.`AS`,
+            match_statistics.`HST`,
+            match_statistics.`AST`,
+            match_statistics.`HC`,
+            match_statistics.`AC`,
+            match_statistics.`HY`,
+            match_statistics.`AY`,
+            match_statistics.`HR`,
+            match_statistics.`AR`,
+            match_odds.`AvgH`,
+            match_odds.`AvgA`,
+            match_odds.`AHCh`,
+            match_odds.`B365H`,
+            match_odds.`B365D`,
+            match_odds.`B365A`,
+            match_odds.`BWH`,
+            match_odds.`BWD`,
+            match_odds.`BWA`,
+            match_odds.`PSH`,
+            match_odds.`PSD`,
+            match_odds.`PSA`
+        FROM matches
+        JOIN teams AS homeTeam ON homeTeam.`Team Id` = matches.`Home Team Id`
+        JOIN teams AS awayTeam ON awayTeam.`Team Id` = matches.`Away Team Id`
+        JOIN full_time_results ON matches.`Match Id` = full_time_results.`Match Id`
+        JOIN half_time_results ON matches.`Match Id` = half_time_results.`Match Id`
+        JOIN match_statistics ON matches.`Match Id` = match_statistics.`Match Id`
+        JOIN match_odds ON matches.`Match Id` = match_odds.`Match Id`
+        JOIN csv_updates ON matches.`Match Id` = csv_updates.`Match Id`
+        ORDER BY matches.`Date` DESC        
+    """)
+
+    rows = cursor.fetchall()
+    close_connection(connection)
+    df = pd.DataFrame.from_records(rows, columns=[x[0] for x in cursor.description])
+    return df
+
 # Main function
 def main():
-    df = pd.read_csv('dataset.csv')
+    df = get_df_from_db() 
     date = '23/09/2024'
     home_team = 'St. Gilloise'
     away_team = 'Anderlecht'
-    model_path = 'best_random_forest_model.joblib'
-    result_game = preprocessing_and_model_selection(df, date, home_team, away_team, model_path)
+
+    just_train_model(df)
+    result_game = just_predict_match_result(df, date, home_team, away_team)
+
     print(result_game)
 
 if __name__ == "__main__":

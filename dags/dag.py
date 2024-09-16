@@ -3,8 +3,10 @@ from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
 from utils.scrap import download_csv, url_of_csv
 from utils.update import update
+from utils.modelling_soccer import get_df_from_db, just_train_model
 import os
 import sys
+
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
 
@@ -36,9 +38,7 @@ def update_db(**kwargs):
         update(csv_list_and_line=csv_list_and_line)
 
 def model_training():
-    """Train the model with the updated data"""
-
-    print("Model training")
+    just_train_model(get_df_from_db())
 
 default_args = {
     'owner': 'airflow',
@@ -51,6 +51,7 @@ default_args = {
 
 with DAG(
     'football_scraper_dag',
+    max_active_tasks = 1,
     default_args = default_args,
     description = 'DAG scraper football data',
     schedule_interval = timedelta(minutes = 1), # TODO : change to @daily

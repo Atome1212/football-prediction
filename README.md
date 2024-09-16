@@ -83,17 +83,15 @@ The project is structured into different modules for scraping data, processing a
         --email admin@example.com
       ```
       
-   4. Start the Airflow web server and scheduler:
+   4. Start the Airflow web server:
       ```bash
         airflow webserver --port 8080
       ```
-      and i an other terminal
+      
+   5. Start the Airflow scheduler:
       ```bash
         airflow scheduler
       ```
-
-
-
 
 ## 🏃‍♂️ How to Run
 

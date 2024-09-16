@@ -203,7 +203,7 @@ def process_csv_updates(connection, cursor, df, csv_file):
     for idx, row in df.iterrows():
         cursor.execute(
             "INSERT INTO csv_updates (`Match Id`, `Csv File Name`, `Csv Line Number`) VALUES (%s, %s, %s)",
-            (0, csv_file.split('.')[0], idx)
+            (0, csv_file.split('.')[0], idx + 1)
         )
     connection.commit()
 

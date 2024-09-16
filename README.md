@@ -18,7 +18,8 @@ The project is structured into different modules for scraping data, processing a
 ## 📚 Table of Contents
 - [📝 Project Description](#-project-description)
 - [💻 Installation](#-installation)
-- [🏃‍♂️ How to Run](#-how-to-run)
+- [🏃‍♂️ How to Run (Manual)](#-how-to-run-manual)
+- [🏃‍♂️ How to Run (Airflow)](#-how-to-run-airflow)
 - [🗂️ Directory Structure](#-directory-structure)
 - [🎓 Team Members](#-team-members)
 

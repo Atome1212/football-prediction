@@ -140,8 +140,28 @@ The project is structured into different modules for scraping data, processing a
 │   ├── scrap.py                       # Functions for scraping football data
 │   ├── update.py                      # Functions for updating the database with new data
 │   ├── modelling_soccer.py            # Football prediction model training and prediction
+├── logos                              # Directory for storing football team logos
+│   ├── Anderlecht.png
+│   ├── Antwerp.png
+│   ├── Beerschot VA.png
+│   ├── Cercle Brugge.png
+│   ├── Charleroi.png
+│   ├── Club Brugge.png
+│   ├── Dender.png
+│   ├── Genk.png
+│   ├── Gent.png
+│   ├── Kortrijk.png
+│   ├── Mechelen.png
+│   ├── Oud-Heverlee Leuven.png
+│   ├── St Truiden.png
+│   ├── St. Gilloise.png
+│   ├── Standard.png
+│   ├── Westerlo.png
+│   └── jupiler_pro_league.jpg
+├── img                                # Directory for storing miscellaneous images
 ├── csv                                # Directory for storing scraped CSV files
 ├── models                             # Directory for storing trained models
+├── deploy_soccer.py                   # Script for deployment
 └── requirements.txt                   # Python package dependencies
 ```
 

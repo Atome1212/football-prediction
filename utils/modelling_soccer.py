@@ -300,14 +300,14 @@ class FootballDataPreprocessor:
         self.add_features([6, 8, 10, 12, 14])
         self.label_column_result()
         return self.df
-    
+        
     def add_new_row(self, date, home_team, away_team, n_list):
         """
         Adds a new row to the DataFrame with the provided match information (date, home team, away team),
         computes additional features based on the last n games for each team, and imputes missing values
         for specific columns using KNN. 
         Ensures that the new row is not added if it already exists in the DataFrame.
-
+    
         Args:
             date (str or datetime): The date of the match to be added.
             home_team (str): The name of the home team for the match.
@@ -316,39 +316,38 @@ class FootballDataPreprocessor:
         
         Returns:
             DataFrame: The updated DataFrame with the new row added, computed features, and missing values imputed.
-
-        Steps:
-            1. Append a new row to the DataFrame with match information (Date, HomeTeam, AwayTeam), sort the DataFrame by the 'Date', reset the index.
-            2. Compute and add to the new row all last n games statistics for both the home and away teams (team form, average stats).
-            3. Impute missing values in the specified betting columns using KNNImputer.
-
-        Missing Value Imputation:
-            - Uses KNNImputer with 5 nearest neighbors to fill missing values in specific betting-related columns: 
-            ['AvgH', 'AvgA', 'AHCh', 'B365H', 'B365D', 'B365A', 'BWH', 'BWD', 'BWA', 'PSH', 'PSD', 'PSA'].
+    
         """
-        if not self.df[(self.df['Date'] == pd.to_datetime(date, format="%d/%m/%Y")) & (self.df['HomeTeam'] == home_team) & (self.df['AwayTeam'] == away_team)].empty:
+        # Attempt to parse the date with multiple formats
+        try:
+            parsed_date = pd.to_datetime(date, format="%d/%m/%Y", errors='raise')
+        except ValueError:
+            parsed_date = pd.to_datetime(date, format="%Y-%m-%d", errors='coerce')
+        
+        if not self.df[(self.df['Date'] == parsed_date) & (self.df['HomeTeam'] == home_team) & (self.df['AwayTeam'] == away_team)].empty:
             return self.df
         
-        new_row = {'Date':date, 'HomeTeam': home_team, 'AwayTeam': away_team}
-        new_row = pd.DataFrame([{'Date': date, 'HomeTeam': home_team, 'AwayTeam': away_team}])
+        # Proceed to add new row
+        new_row = pd.DataFrame([{'Date': parsed_date, 'HomeTeam': home_team, 'AwayTeam': away_team}])
         self.df = pd.concat([new_row, self.df], ignore_index=True)        
         self.rewrite_date()
         self.df = self.df.sort_values(by="Date", ascending=False).reset_index(drop=True)
         self.create_season()
-        new_row_index = self.df[(self.df['Date'] == date) & (self.df['HomeTeam'] == home_team) & (self.df['AwayTeam'] == away_team)].index
-
+        new_row_index = self.df[(self.df['Date'] == parsed_date) & (self.df['HomeTeam'] == home_team) & (self.df['AwayTeam'] == away_team)].index
+    
+        # Compute features for the new row (no changes to this part)
         n_last_games_hometeam = self.window_rows_last_n_games(home_team, n_list)
         n_last_games_awayteam = self.window_rows_last_n_games(away_team, n_list)
         n_last_games_home = self.window_rows_last_n_games_home(home_team, n_list)
         n_last_games_away = self.window_rows_last_n_games_away(away_team, n_list)
         h2h_df = self.window_rows_head_to_head(home_team, away_team)
-
+    
         for i, n in enumerate(n_list):
             self.df.loc[new_row_index, f'home_team_form{n}'] = self.compute_team_form(n_last_games_hometeam[i], home_team)
             self.df.loc[new_row_index, f'away_team_form{n}'] = self.compute_team_form(n_last_games_awayteam[i], away_team)
             self.df.loc[new_row_index, f'home_team_form_home{n}'] = self.compute_team_form_home(n_last_games_home[i])
             self.df.loc[new_row_index, f'away_team_form_away{n}'] = self.compute_team_form_away(n_last_games_away[i])
-
+    
             home_stats = self.compute_team_stats(n_last_games_hometeam[i], home_team)
             self.df.loc[new_row_index, f'home_avg_yellow{n}'] = home_stats[0]
             self.df.loc[new_row_index, f'home_avg_red{n}'] = home_stats[1]
@@ -356,7 +355,7 @@ class FootballDataPreprocessor:
             self.df.loc[new_row_index, f'home_avg_target{n}'] = home_stats[3]
             self.df.loc[new_row_index, f'home_avg_corners{n}'] = home_stats[4]
             self.df.loc[new_row_index, f'home_avg_goals{n}'] = home_stats[5]
-
+    
             away_stats = self.compute_team_stats(n_last_games_awayteam[i], away_team)
             self.df.loc[new_row_index, f'away_avg_yellow{n}'] = away_stats[0]
             self.df.loc[new_row_index, f'away_avg_red{n}'] = away_stats[1]
@@ -364,15 +363,16 @@ class FootballDataPreprocessor:
             self.df.loc[new_row_index, f'away_avg_target{n}'] = away_stats[3]
             self.df.loc[new_row_index, f'away_avg_corners{n}'] = away_stats[4]
             self.df.loc[new_row_index, f'away_avg_goals{n}'] = away_stats[5]
-
+    
         self.df.loc[new_row_index, 'h2h_record'] = self.compute_h2h_score(h2h_df, home_team)
-
+    
         imputer = KNNImputer(n_neighbors=5)
         betting_cols_to_impute = ['AvgH', 'AvgA', 'AHCh', 'B365H', 'B365D', 'B365A', 'BWH', 'BWD', 'BWA', 'PSH', 'PSD', 'PSA']
         self.df[betting_cols_to_impute] = imputer.fit_transform(self.df[betting_cols_to_impute])
         self.df.loc[new_row_index, 'home_away_ratio'] = self.df.loc[new_row_index, 'AvgH'] / self.df.loc[new_row_index, 'AvgA']
-
+    
         return self.df
+   
     
 # Step1.2: Find the find combination of n games sequences to optimize model performance (working on the cleaned and preprocessed df)
 
